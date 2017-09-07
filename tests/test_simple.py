@@ -1,6 +1,7 @@
 import cv_utils
 import pickle
 import numpy as np
+import cv2
 
 TEST_DATA = pickle.load(open( "./tests/test_data.p", "rb" ))
 
@@ -228,115 +229,403 @@ def test_draw_polygon():
   # assert result.shape == (256,256,3)
 
 def test_translate_inpixels():
-  pass
+  dummy_data = helper_dummychannels()
+  result = cv_utils.translate_inpixels(dummy_data, 20,20)
+  expected = helper_getimage("translated_1.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.translate_inpixels(dummy_data, -20,-20)
+  expected = helper_getimage("translated_2.jpg")
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(dummy_data, helper_dummychannels()))
 
 def test_translate_inlocal():
-  pass
+  dummy_data = helper_dummychannels()
+  result = cv_utils.translate_inlocal(dummy_data, 0.5,0.5)
+  expected = helper_getimage("translated_3.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.translate_inlocal(dummy_data, -0.5,0.5)
+  expected = helper_getimage("translated_4.jpg")
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(dummy_data, helper_dummychannels()))
 
 def test_crop_inpixels():
-  pass
+  image_data = helper_getimage("cake.jpg")
+  result = cv_utils.crop_inpixels(image_data, (400,80), (650,490))
+  expected = helper_getimage("cake_crop.jpg")
+
+  assert np.all(np.equal(result, expected))
+  assert np.all(np.equal(image_data, helper_getimage("cake.jpg")))
 
 def test_crop_inlocal():
-  pass
+  image_data = helper_getimage("cake.jpg")
+  result = cv_utils.crop_inlocal(image_data, (0.5,0.5), (1.0,1.0))
+  expected = helper_getimage("cake_crop2.jpg")
+
+  assert np.all(np.equal(result, expected))
+  assert np.all(np.equal(image_data, helper_getimage("cake.jpg")))
 
 def test_rotate():
-  pass
+  dummy_data = helper_dummychannels()
+  result = cv_utils.rotate(dummy_data, 90, pivot_coords=None, scale=1.0)
+  expected = helper_getimage("rotate_90.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.rotate(dummy_data, -45, pivot_coords=None, scale=1.0)
+  expected = helper_getimage("rotate_45.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.rotate(dummy_data, 45, pivot_coords=(0,0), scale=1.0)
+  expected = helper_getimage("rotate_45_corner.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.rotate(dummy_data, 45, pivot_coords=None, scale=0.5)
+  expected = helper_getimage("rotate_45_scale.jpg")
+  assert np.all(np.equal(result, expected))
 
 def test_flip():
-  pass
+  dummy_data = helper_dummychannels()
+  result = cv_utils.flip(dummy_data, 0)
+  expected = helper_getimage("flip_horiz.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.flip(dummy_data, 1)
+  expected = helper_getimage("flip_vert.jpg")
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(dummy_data, helper_dummychannels()))
 
 def test_scale_inpixels():
-  pass
+  dummy_data = helper_dummychannels()
+  result = cv_utils.scale_inpixels(dummy_data, 300, 300)
+  expected = helper_getimage("scale2.jpg")
+  assert np.all(np.equal(result, expected))
+  assert np.all(np.equal(dummy_data, helper_dummychannels()))
 
 def test_scale_inlocal():
-  pass
+  dummy_data = helper_dummychannels()
+  result = cv_utils.scale_inlocal(dummy_data, 0.5, 0.75)
+  expected = helper_getimage("scale1.jpg")
+  assert np.all(np.equal(result, expected))
+  assert np.all(np.equal(dummy_data, helper_dummychannels()))
 
 def test_bit_and():
-  pass
+  mask1 = helper_getimage("mask1.jpg")
+  mask2 = helper_getimage("mask2.jpg")
+  expected = helper_getimage("and.jpg")
+  result = cv_utils.bit_and(mask1, mask2)
+
+  assert np.all(np.equal(result, expected))
 
 def test_bit_or():
-  pass
+  mask1 = helper_getimage("mask1.jpg")
+  mask2 = helper_getimage("mask2.jpg")
+  expected = helper_getimage("or.jpg")
+  result = cv_utils.bit_or(mask1, mask2)
+
+  assert np.all(np.equal(result, expected))
 
 def test_bit_xor():
-  pass
+  mask1 = helper_getimage("mask1.jpg")
+  mask2 = helper_getimage("mask2.jpg")
+  expected = helper_getimage("xor.jpg")
+  result = cv_utils.bit_xor(mask1, mask2)
+
+  assert np.all(np.equal(result, expected))
 
 def test_bit_not():
-  pass
+  mask1 = helper_getimage("mask1.jpg")
+  expected = helper_getimage("not.jpg")
+  result = cv_utils.bit_not(mask1)
+
+  assert np.all(np.equal(result, expected))
 
 def test_apply_mask():
-  pass
+  dummy_data = helper_dummychannels()
+  mask = helper_getimage("and.jpg")
+  expected = helper_getimage("and_apply.jpg")
+  result = cv_utils.apply_mask(dummy_data, mask)
 
-def test_blur():
-  pass
+  assert np.all(np.equal(result, expected))
+  assert np.all(np.equal(dummy_data, helper_dummychannels()))
 
-def test_blur_kernel():
-  pass
+def test_blur_box():
+  image_data = helper_getimage("cake.jpg")
+  
+  expected = helper_getimage("blur_box_100.jpg")
+  result = cv_utils.blur_box(image_data, 100)
+  assert np.all(np.equal(result, expected))
+  
+  expected = helper_getimage("blur_box_7.jpg")
+  result = cv_utils.blur_box(image_data, 7)
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(image_data, helper_getimage("cake.jpg")))
 
 def test_blur_gausian():
-  pass
+  image_data = helper_getimage("cake.jpg")
+  result = cv_utils.blur_gausian(image_data, 101)
+  expected = helper_getimage("blur_gau_101.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.blur_gausian(image_data, 7)
+  expected = helper_getimage("blur_gau_7.jpg")
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(image_data, helper_getimage("cake.jpg")))
 
 def test_blur_median():
-  pass
+  image_data = helper_getimage("cake.jpg")
+  result = cv_utils.blur_median(image_data, 101)
+  expected = helper_getimage("blur_median_101.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.blur_median(image_data, 7)
+  expected = helper_getimage("blur_median_7.jpg")
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(image_data, helper_getimage("cake.jpg")))
 
 def test_blur_bilateral():
-  pass
+  image_data = helper_getimage("cake.jpg")
+  expected = helper_getimage("blur_bilat.jpg")
+
+  result = cv_utils.blur_bilateral(image_data)
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.blur_bilateral(image_data, 9, 75, 75)
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(image_data, helper_getimage("cake.jpg")))
 
 def test_denoise():
-  pass
+  image_data = helper_getimage("cake.jpg")
+  result = cv_utils.denoise(image_data, 1)
+  expected = helper_getimage("denoise1.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.denoise(image_data, 33)
+  expected = helper_getimage("denoise2.jpg")
+  assert np.all(np.equal(result, expected))
+  assert np.all(np.equal(image_data, helper_getimage("cake.jpg")))
 
 def test_sharpen():
-  pass
+  image_data = helper_getimage("cake.jpg")
+  result = cv_utils.sharpen(image_data)
+  expected=helper_getimage("sharpen.jpg")
+
+  assert np.all(np.equal(result, expected))
+  assert np.all(np.equal(image_data, helper_getimage("cake.jpg")))
 
 def test_threshold_binary():
-  pass
+  dummy_data = helper_dummychannels()
+  result = cv_utils.threshold_binary(dummy_data, 80, 255)
+  expected = helper_getimage("tresh_binary255.jpg")
+  assert np.all(np.equal(result, expected))
+  
+  result = cv_utils.threshold_binary(dummy_data, 80, 100)
+  expected = helper_getimage("tresh_binary100.jpg")
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(dummy_data, helper_dummychannels()))
 
 def test_threshold_binary_inverse():
-  pass
+  dummy_data = helper_dummychannels()
+
+  result = cv_utils.threshold_binary_inverse(dummy_data, 80, 255)
+  expected = helper_getimage("tresh_binaryi255.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.threshold_binary_inverse(dummy_data, 80, 100)
+  expected = helper_getimage("tresh_binaryi100.jpg")
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(dummy_data, helper_dummychannels()))
 
 def test_threshold_truncate():
-  pass
+  dummy_data = helper_dummychannels()
+  result = cv_utils.threshold_truncate(dummy_data, 200, 255)
+  expected = helper_getimage("tresh_trunc200.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.threshold_truncate(dummy_data, 140, 255)
+  expected = helper_getimage("tresh_trunc140.jpg")
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(dummy_data, helper_dummychannels()))
 
 def test_threshold_tozero():
-  pass
+  dummy_data = helper_dummychannels()
+
+  result = cv_utils.threshold_tozero(dummy_data, 127, 255)
+  expected = helper_getimage("tresh_tozero.jpg")
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(dummy_data, helper_dummychannels()))
 
 def test_threshold_tozero_inverse():
-  pass
+  dummy_data = helper_dummychannels()
+
+  result = cv_utils.threshold_tozero_inverse(dummy_data, 127, 255)
+  expected = helper_getimage("tresh_tozeroi.jpg")
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(dummy_data, helper_dummychannels()))
 
 def test_threshold_adaptive():
-  pass
+  image_data = helper_getimage("cake.jpg")
+  image_data = cv_utils.convert_to_gray(image_data)
+
+  result = cv_utils.threshold_adaptive(image_data)
+  expected = helper_getimage("tresh_ada.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.threshold_adaptive(image_data, blocksize=7)
+  expected = helper_getimage("tresh_ada7.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.threshold_adaptive(image_data, blocksize=15)
+  expected = helper_getimage("tresh_ada15.jpg")
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(image_data, cv_utils.convert_to_gray(helper_getimage("cake.jpg"))))
 
 def test_threshold_otsu():
-  pass
+  image_data = helper_getimage("cake.jpg")
+  image_data = cv_utils.convert_to_gray(image_data)
+
+  result = cv_utils.threshold_otsu(image_data, 240)
+  expected = helper_getimage("tresh_otsu.jpg")
+  assert np.all(np.equal(result, expected))
+  assert np.all(np.equal(image_data, cv_utils.convert_to_gray(helper_getimage("cake.jpg"))))
+
+def test_threshold_gaussianotsu():
+  image_data = helper_getimage("cake.jpg")
+  image_data = cv_utils.convert_to_gray(image_data)
+
+  result = cv_utils.threshold_gaussianotsu(image_data, 240)
+  expected = helper_getimage("tresh_gotsu.jpg")
+  assert np.all(np.equal(result, expected))
+  assert np.all(np.equal(image_data, cv_utils.convert_to_gray(helper_getimage("cake.jpg"))))
 
 def test_morph_dilate():
-  pass
+  image_data = helper_getimage("hello.png")
+  _, image_data = cv2.threshold(image_data, 0, 255, cv2.THRESH_BINARY_INV)
+
+  result = cv_utils.morph_dilate(image_data, 5)
+  expected = helper_getimage("dilate_5.jpg")
+  assert np.all(np.equal(result, expected))
+  
+  result = cv_utils.morph_dilate(image_data, (5,5))
+  expected = helper_getimage("dilate_5x5.jpg")
+  assert np.all(np.equal(result, expected))
 
 def test_morph_erode():
-  pass
+  image_data = helper_getimage("hello.png")
+  _, image_data = cv2.threshold(image_data, 0, 255, cv2.THRESH_BINARY_INV)
+
+  result = cv_utils.morph_erode(image_data, 5)
+  expected = helper_getimage("erode_5.jpg")
+  assert np.all(np.equal(result, expected))
+  
+  result = cv_utils.morph_erode(image_data, (5,5))
+  expected = helper_getimage("erode_5x5.jpg")
+  assert np.all(np.equal(result, expected))
 
 def test_morph_open():
-  pass
+  image_data = helper_getimage("hello.png")
+  _, image_data = cv2.threshold(image_data, 0, 255, cv2.THRESH_BINARY_INV)
+
+  result = cv_utils.morph_open(image_data, 5)
+  expected = helper_getimage("open_5.jpg")
+  assert np.all(np.equal(result, expected))
+  
+  result = cv_utils.morph_open(image_data, (5,5))
+  expected = helper_getimage("open_5x5.jpg")
+  assert np.all(np.equal(result, expected))
 
 def test_morph_close():
-  pass
+  image_data = helper_getimage("hello.png")
+  _, image_data = cv2.threshold(image_data, 0, 255, cv2.THRESH_BINARY_INV)
+
+  result = cv_utils.morph_close(image_data, 5)
+  expected = helper_getimage("close_5.jpg")
+  assert np.all(np.equal(result, expected))
+  result = cv_utils.morph_close(image_data, (5,5))
+  expected = helper_getimage("close_5x5.jpg")
+  assert np.all(np.equal(result, expected))
 
 def test_edge_sobel_x():
-  pass
+  image_data = helper_getimage("car.jpg")
+  image_data = cv_utils.convert_to_gray(image_data)
+
+  result = cv_utils.edge_sobel_x(image_data, 5)
+  expected = helper_getimage("edge_sobelx.jpg")
+  assert np.all(np.equal(result, expected))
 
 def test_edge_sobel_y():
-  pass
+  image_data = helper_getimage("car.jpg")
+  image_data = cv_utils.convert_to_gray(image_data)
+
+  result = cv_utils.edge_sobel_y(image_data, 5)
+  expected = helper_getimage("edge_sobely.jpg")
+  assert np.all(np.equal(result, expected))
 
 def test_edge_laplacian():
-  pass
+  image_data = helper_getimage("car.jpg")
+  image_data = cv_utils.convert_to_gray(image_data)
+
+  result = cv_utils.edge_laplacian(image_data)
+  expected = helper_getimage("edge_laplacian.jpg")
+  assert np.all(np.equal(result, expected))
 
 def test_edge_canny():
-  pass
+  image_data = helper_getimage("car.jpg")
+  image_data = cv_utils.convert_to_gray(image_data)
+
+  result = cv_utils.edge_canny(image_data, 50, 120)
+  expected = helper_getimage("edge_canny.jpg")
+  assert np.all(np.equal(result, expected))
 
 def test_edge_canny_blur():
-  pass
+  image_data = helper_getimage("car.jpg")
+  image_data = cv_utils.convert_to_gray(image_data)
 
-def test_perspective_transform():
-  pass
+  result = cv_utils.edge_canny_blur(image_data, 50, 120)
+  expected = helper_getimage("edge_canny_blur.jpg")
+  assert np.all(np.equal(result, expected))
+
+def test_perspective_affine():
+  image_data = helper_getimage("affine.jpg")
+  
+  points_A = np.float32([[320,15], [700,215], [85,610]])
+  points_B = np.float32([[0,0], [420,0], [0,594]])
+
+  result = cv_utils.perspective_affine(image_data, points_A, points_B)
+  expected = helper_getimage("affine2.jpg")
+
+  assert np.all(np.equal(result, expected))
+  assert np.all(np.equal(image_data, helper_getimage("affine.jpg")))
+
+def test_perspective_nonaffine():
+  image_data = helper_getimage("keyboard.jpg")
+  
+  points_A = np.float32([[255,65], [935,330], [50,220], [730,700]])
+  points_B = np.float32([[0,0], [700,0], [0,300], [700,300]])
+  newimage_image_size = (700, 300)
+
+  result = cv_utils.perspective_nonaffine(image_data, points_A, points_B, newimage_image_size)
+  expected = helper_getimage("nonaffine.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.perspective_nonaffine(image_data, points_A, points_B)
+  expected = helper_getimage("nonaffine2.jpg")
+  assert np.all(np.equal(result, expected))
+
+  assert np.all(np.equal(image_data, helper_getimage("keyboard.jpg")))
 
 def test_compute_contours():
   pass
