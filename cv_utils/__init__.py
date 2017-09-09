@@ -378,29 +378,27 @@ def compute_contours(image_data, threshold1=0, threshold2=255, canny_threshold1=
   if image_data.ndim > 2:
     image_data = convert_to_gray(image_data)
 
-  ret, threshold = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV)
+  ret, threshold = cv2.threshold(image_data, threshold1, threshold2, cv2.THRESH_BINARY_INV)
   edged = cv2.Canny(threshold, canny_threshold1, canny_threshold2)
   _, contours, hierarchy = cv2.findContours(edged, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
   return contours, hierarchy
 
-def contours_sort_left_to_right(image_data, contours_list):
-  pass
+def contour_centroid(contour):
+  M = cv2.moments(contour)
+  cX = int(M["m10"] / M["m00"])
+  cY = int(M["m01"] / M["m00"])
+  return (cX, cY)
 
-def contours_sort_top_down(image_data, contours_list):
-  pass
+def contour_area(contour):
+  area = cv2.contourArea(contour)
+  return area
 
-def contours_sort_from_origin(image_data, contours_list):
-  pass
+def contours_highlight(image_data, contours_list, color=(0,0,255), thickness=3):
+  result = image_data.copy()
+  result = cv2.drawContours(result, contours_list, -1, color, thickness)
 
-def contours_sort_by_area(image_data, contours_list):
-  pass
-
-def contours_centroid(contours_list):
-  pass
-
-def contours_highlight(image_data, contours_list):
-  pass
+  return result
 
 def contour_approximation(contour):
   pass

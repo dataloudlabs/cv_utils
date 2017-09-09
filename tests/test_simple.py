@@ -25,7 +25,7 @@ def helper_dummychannels():
 
 def helper_getimage(filename):
   result = TEST_DATA["resources/{}".format(filename)]
-  return result
+  return result.copy()
 
 def helper_writetoTEST_DATA(key, value):
   TEST_DATA[key] = value
@@ -199,7 +199,6 @@ def test_draw_line():
 
   assert np.all(np.equal(expected, result))
   assert np.all(np.equal(helper_dummychannels(), dummy_data))
-
 
 def test_draw_polygon():
   dummy_data = helper_dummychannels()
@@ -628,25 +627,43 @@ def test_perspective_nonaffine():
   assert np.all(np.equal(image_data, helper_getimage("keyboard.jpg")))
 
 def test_compute_contours():
-  pass
+  image_data = helper_getimage("color_shapes.jpg")
+  expected = helper_getimage("color_shapes_2.jpg")
 
-def test_contours_sort_left_to_right():
-  pass
+  contours, hierarchy = cv_utils.compute_contours(image_data)
+  assert len(contours) == 0
 
-def test_contours_sort_top_down():
-  pass
+  contours, hierarchy = cv_utils.compute_contours(image_data, 254, 255)
+  cv2.drawContours(image_data, contours, -1, (0,0,255), 10)
+  assert np.all(np.equal(image_data, expected))
 
-def test_contours_sort_from_origin():
-  pass
+def test_contour_centroid():
+  image_data = helper_getimage("color_shapes.jpg")
+  expected = [(569, 199), (359, 199), (779, 199), (149, 199)]
 
-def test_contours_sort_by_area():
-  pass
+  contours, hierarchy = cv_utils.compute_contours(image_data, 254, 255)
+  result = map(cv_utils.contour_centroid, contours)
+  assert np.all(np.equal(result, expected))
 
-def test_contours_centroid():
-  pass
+def test_contour_area():
+  image_data = helper_getimage("color_shapes.jpg")
+  expected = [19878.0, 31460.0, 40398.0, 40398.0]
+
+  contours, hierarchy = cv_utils.compute_contours(image_data, 254, 255)
+  result = map(cv_utils.contour_area, contours)
+
+  #print(expected)
+  #print(result)
+
+  assert np.all(np.equal(result, expected))
 
 def test_contours_highlight():
-  pass
+  image_data = helper_getimage("color_shapes.jpg")
+  expected = helper_getimage("color_shapes_2.jpg")
+
+  contours, hierarchy = cv_utils.compute_contours(image_data, 254, 255)
+  result = cv_utils.contours_highlight(image_data, contours, thickness=10)
+  assert np.all(np.equal(result, expected))
 
 def test_contour_approximation():
   pass
