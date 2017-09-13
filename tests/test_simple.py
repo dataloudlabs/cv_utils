@@ -3,8 +3,21 @@ import pickle
 import numpy as np
 import cv2
 
-TEST_DATA = pickle.load(open( "./tests/test_data.p", "rb" ))
 
+TEST_DATA = None
+CURRENT_PICKLE = 5
+
+def load_test_data():
+  global TEST_DATA
+  TEST_DATA = dict()
+  for i in range(5):
+    work = pickle.load(open( "./tests/test_data_{}.p".format(i+1), "rb" ))
+    for k in work.keys():
+      TEST_DATA[k] = work[k]
+
+  return TEST_DATA
+
+load_test_data()
 
 def helper_listtestdata():
   result = test_simple.TEST_DATA.keys()
@@ -28,8 +41,9 @@ def helper_getimage(filename):
   return result.copy()
 
 def helper_writetoTEST_DATA(key, value):
-  TEST_DATA[key] = value
-  pickle.dump(TEST_DATA, open( "./tests/test_data.p", "wb" ))
+  work = pickle.load(open( "./tests/test_data_{}.p".format(CURRENT_PICKLE), "rb" ))
+  work[key] = value
+  pickle.dump(work, open( "./tests/test_data_{}.p".format(CURRENT_PICKLE), "wb" ))
 
 def test_convert_to_rgb():
   image_data = helper_getimage("cake.jpg")
@@ -894,9 +908,9 @@ def test_match_face():
 def test_match_eyes():
   image_data = helper_getimage("Patrick_Stewart_and_Hugh_Jackman_Press_Conference_Logan_Berlinale_2017_01.jpg")
   result = cv_utils.match_eyes(image_data)
-  expected = [[(529, 189), (568, 228)], 
-              [(589, 174), (641, 226)], 
-              [(268, 307), (318, 357)]]
+  expected = [[[268, 307], [318, 357]], [[529, 189], [568, 228]], [[589, 174], [641, 226]]]
+
+  result = sorted(result)
 
   assert np.all(np.equal(result, expected))
 
