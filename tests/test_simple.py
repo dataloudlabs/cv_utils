@@ -657,6 +657,22 @@ def test_contour_area():
 
   assert np.all(np.equal(result, expected))
 
+def test_contour_boundingbox():
+  image_data = helper_getimage("house.png")
+  contours, hier = cv_utils.compute_contours(image_data, 127,255)
+  
+  expected = [((148, 254), (197, 335)),
+              ((107, 238), (214, 344)),
+              ((97, 150), (263, 344)),
+              ((79, 136), (80, 138)),
+              ((75, 135), (78, 138)),
+              ((79, 29), (251, 136)),
+              ((64, 10), (278, 363))]
+
+  result = map(cv_utils.contour_boundingbox, contours)
+  
+  assert np.all(np.equal(expected, result))
+
 def test_contours_highlight():
   image_data = helper_getimage("color_shapes.jpg")
   expected = helper_getimage("color_shapes_2.jpg")
@@ -666,49 +682,223 @@ def test_contours_highlight():
   assert np.all(np.equal(result, expected))
 
 def test_contour_approximation():
-  pass
+  image_data = helper_getimage("house.png")
+  expected = helper_getimage("house3.png")
+
+  contours, hier = cv_utils.compute_contours(image_data, 127,255)
+
+  approxs = [ cv_utils.contour_approximation(x,0.001) for x in contours ]
+  result = cv_utils.contours_highlight(image_data, approxs)
+  
+  assert np.all(np.equal(expected, result))
 
 def test_contour_hull_approximation():
-  pass
+  data = helper_getimage("flower3.png")
+  expected = helper_getimage("flower4.png")
+
+  contours, hier = cv_utils.compute_contours(data, 176, 255)
+  hulls = map(cv_utils.contour_hull_approximation, contours)
+  result = cv_utils.contours_highlight(data, hulls)
+
+  assert np.all(np.equal(result, expected))
 
 def test_match_shape():
-  pass
+  image_data = helper_getimage("shapes3")
+  template_data = helper_getimage("shapes4")
+  template_c, template_h = cv_utils.compute_contours(template_data, 0, 255)
+  search_c, search_h = cv_utils.compute_contours(image_data, 0, 255)
+
+  result = [ cv_utils.match_shape(x, template_c[0], cv2.CONTOURS_MATCH_I3) for x in search_c]
+  expected = [0.18902099881889753, 6.19450632585382, 0.1594613138288294]
+
+  #https://stackoverflow.com/questions/46176571/interpreting-opencv-cv2-matchshapes-weird-values-using-python
+  assert np.all(np.equal(result, expected))
 
 def test_match_hough_lines():
-  pass
+  image_data = helper_getimage("skyscrapper.jpg")
+  image_data = cv_utils.convert_to_gray(image_data)
+  image_data = cv_utils.edge_canny(image_data, 50, 150)
+  
+  lines = cv_utils.match_hough_lines(image_data, 223)
+  result = helper_getimage("skyscrapper.jpg")
+  map(lambda x: cv2.line(result,x[0],x[1],(0,0,255),2), lines)
+
+  expected = helper_getimage("skyscrapper3.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.match_hough_lines(image_data, 450)
+  expected = [[(598, -1032), (703, 964)],
+              [(595, -1032), (700, 964)],
+              [(-1011, 668), (987, 703)],
+              [(407, -1212), (1091, 666)]]
+
+  assert np.all(np.equal(result, expected))
 
 def test_match_prob_hough_lines():
-  pass
+  image_data = helper_getimage("skyscrapper2.jpg")
+  image_data = cv_utils.convert_to_gray(image_data)
+  image_data = cv_utils.edge_canny(image_data, 100, 170)
+
+  lines = cv_utils.match_prob_hough_lines(image_data, 220, 10, 5)
+  result = helper_getimage("skyscrapper2.jpg")
+  map(lambda x: cv2.line(result,x[0],x[1],(0,0,255),2), lines)
+
+  expected = helper_getimage("skyscrapper4.jpg")
+  assert np.all(np.equal(result, expected))
+
+  result = cv_utils.match_hough_lines(image_data, 700, 100, 5)
+
+  # expected = [[(1111, 422), (1251, 331)],
+  #            [(873, 773), (992, 696)],
+  #            [(969, 510), (1081, 437)],
+  #            [(962, 524), (1089, 441)]]
+
+  expected = [[(1450, 1000), (1450, -1000)], 
+              [(1150, 1000), (1150, -1000)], 
+              [(950, 1000), (950, -1000)], 
+              [(750, 1000), (750, -1000)]]
+
+  assert np.all(np.equal(result, expected))
 
 def test_match_circle():
-  pass
+  data = helper_getimage("circles.jpg")
+  data = cv_utils.crop_inlocal(data, [0,0], [0.37 ,0.37])
+  data = cv_utils.convert_to_gray(data)
+  data = cv_utils.threshold_binary(data, 10, 255)
+
+  centers, radius = cv_utils.match_circle(data, 1)
+  expected = [((199, 199), 25), 
+              ((199, 40), 25), 
+              ((40, 40), 24), 
+              ((119, 40), 25)]
+
+  result = [ x for x in zip(centers, radius) ]
+
+  assert np.all(np.equal(result, expected))
 
 def test_match_blobs():
-  pass
+  image_data = helper_getimage("cereals2.jpg")
+  centers, radius, k = cv_utils.match_blobs(image_data)
+  centers = [map(int, x) for x in centers]
+  radius = map(int, radius)
+  
+  expected = [([883, 442], 25),
+              ([340, 279], 21),
+              ([781, 436], 25),
+              ([175, 385], 26),
+              ([67, 301], 24)]
+
+  result = [ x for x in zip(centers, radius) ]
+
+  assert np.all(np.equal(result, expected))
 
 def test_describe_corners():
-  pass
+  image_data = helper_getimage('car.jpg')
+  image_data = cv_utils.crop_inlocal(image_data, (0.5, 0.1), (1.0,0.6))
+  result = image_data.copy()
+  expected = helper_getimage("harris_corners.jpg")
+
+  harris_corners = cv_utils.describe_corners(image_data, 3 ,3 ,0.05)
+  harris_corners = cv2.dilate(harris_corners, None)
+  result[harris_corners>0.025*harris_corners.max()]=[255,127,0]
+  
+  assert harris_corners.shape == image_data.shape[:2]
+  assert np.all(np.equal(result, expected))
 
 def test_describe_good2track():
-  pass
+  # Load image then grayscale
+  image_data = helper_getimage('car.jpg')
+  result = cv_utils.describe_good2track(image_data, 300)
+  expected = [[ 499.,  324.],
+              [ 225.,  532.],
+              [  66.,  179.],
+              [ 791.,  566.],
+              [ 784.,  189.],
+              [ 403.,   19.]]
+
+  assert np.all(np.equal(result, expected))
 
 def test_describe_FAST():
-  pass
+  # Load image then grayscale
+  image_data = helper_getimage('car.jpg')
+  image_data = cv_utils.crop_inlocal(image_data, (0.65, 0.0), (1.0,0.15))
+
+  centers, radius, keypoints = cv_utils.describe_FAST(image_data)
+
+  expected = [(111.0, 3.0), (189.0, 3.0), (119.0, 7.0), (95.0, 8.0),
+             (122.0, 10.0), (171.0, 10.0), (222.0, 10.0), (92.0, 14.0),
+             (158.0, 14.0), (155.0, 15.0), (138.0, 16.0), (141.0, 16.0),
+             (148.0, 16.0), (144.0, 17.0), (86.0, 18.0), (82.0, 32.0),
+             (80.0, 36.0), (57.0, 37.0), (59.0, 38.0), (64.0, 39.0), 
+             (53.0, 40.0), (72.0, 40.0), (50.0, 43.0), (35.0, 45.0), 
+             (40.0, 45.0), (45.0, 47.0), (50.0, 47.0), (34.0, 48.0), 
+             (36.0, 48.0), (41.0, 48.0), (22.0, 49.0), (15.0, 52.0), 
+             (16.0, 54.0), (78.0, 63.0)]
+
+  assert np.all(np.equal(centers, expected))
 
 def test_describe_BRIEF():
-  pass
+  # Load image then grayscale
+  image_data = helper_getimage('car.jpg')
+  image_data = cv_utils.crop_inlocal(image_data, (0.7, 0.1), (1.0,0.6))
 
-def test_describe_ORG():
-  pass
+  centers, radius, keypoints = cv_utils.describe_BRIEF(image_data)
+
+  expected_centers = [(114.0, 71.0), (72.0, 73.0), (85.0, 75.0), (90.0, 77.0),
+                      (98.0, 77.0), (71.0, 79.0), (93.0, 78.0), (160.0, 78.0),
+                      (96.0, 86.0), (172.0, 106.0), (69.0, 110.0), (175.0, 111.0),
+                      (167.0, 118.0), (172.0, 118.0), (72.0, 124.0), (165.0, 123.0),
+                      (164.0, 126.0), (173.0, 127.0), (71.0, 135.0), (106.0, 193.0),
+                      (175.0, 224.0), (159.0, 236.0)]
+
+  expected_radius = [6.0, 6.0, 8.0, 6.0, 6.0,
+                     4.0, 4.0, 32.0, 8.0, 12.0,
+                     6.0, 22.0, 12.0, 4.0, 4.0, 16.0,
+                     22.0, 6.0, 8.0, 4.0, 6.0, 22.0]
+
+  assert np.all(np.equal(expected_centers, centers))
+  assert np.all(np.equal(expected_radius, radius))
+
+def test_describe_ORB():
+  # Load image then grayscale
+  image_data = helper_getimage('car.jpg')
+  image_data = cv_utils.crop_inlocal(image_data, (0.7, 0.24), (0.9,0.35))
+  
+  c, r, k = cv_utils.describe_ORB(image_data)
+
+  expected = [(54.0, 31.0), (103.0, 32.0), (106.0, 32.0), (112.0, 32.0), 
+              (57.0, 33.0), (117.0, 33.0), (59.0, 34.0), (95.0, 34.0), 
+              (121.0, 34.0), (123.0, 34.0), (74.0, 35.0), (103.0, 35.0), 
+              (126.0, 35.0), (62.0, 36.0), (68.0, 36.0), (70.0, 36.0), 
+              (72.0, 36.0), (101.0, 36.0)]
+
+  assert np.all(np.equal(c, expected))
 
 def test_describe_HOG():
-  pass
+  image_data = helper_getimage("dogs.jpg")
+
+  gradients, hog_feats = cv_utils.describe_HOG(image_data)
+  assert gradients.shape == (53, 80, 9)
+
+  gradients, hog_feats = cv_utils.describe_HOG(image_data, cellsize=(9,9), nbins=11)
+  assert gradients.shape == (47, 71, 11) # (image_h/cell_zise, image_w//cell_size, angular nbins)
+
 
 def test_match_face():
-  pass
+  image_data = helper_getimage("Patrick_Stewart_and_Hugh_Jackman_Press_Conference_Logan_Berlinale_2017_01.jpg")
+  result = cv_utils.match_face(image_data)
+  expected = [[(489, 124), (688, 323)], [(237, 260), (427, 450)]]
+
+  assert np.all(np.equal(result, expected))
 
 def test_match_eyes():
-  pass
+  image_data = helper_getimage("Patrick_Stewart_and_Hugh_Jackman_Press_Conference_Logan_Berlinale_2017_01.jpg")
+  result = cv_utils.match_eyes(image_data)
+  expected = [[(529, 189), (568, 228)], 
+              [(589, 174), (641, 226)], 
+              [(268, 307), (318, 357)]]
+
+  assert np.all(np.equal(result, expected))
 
 def test_match_facial_landmarks():
   pass
