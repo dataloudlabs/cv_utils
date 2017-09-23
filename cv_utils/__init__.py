@@ -638,11 +638,33 @@ def match_facial_landmarks(image_data):
 
   return result
 
+def compute_grabcut(image_data, rect_coords, iter_count=5, seed=7):
+  np.random.seed(seed)
+
+  img = image_data.copy()
+  mask = np.zeros(img.shape[:2], np.uint8)
+
+  bgdMoodel = np.zeros((1,65), np.float64)
+  fgdMoodel = np.zeros((1,65), np.float64)
+  
+  rect = (rect_coords[0], rect_coords[1], rect_coords[2] - rect_coords[0], rect_coords[3] - rect_coords[1])
+
+  cv2.grabCut(img, mask, rect, bgdMoodel, fgdMoodel, iter_count, cv2.GC_INIT_WITH_RECT)
+      
+  mask = np.where((mask==2)|(mask==0), 0, 1).astype('uint8')
+
+  if seed is not None:
+    np.random.seed()
+  
+  return mask
+
+
 def compute_faceswap():
   pass
 
 def filter_by_color():
   pass
+
 
 def __set_config(config=None):
   global CONFIG
